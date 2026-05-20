@@ -1,0 +1,48 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        env:
+          CI: true
+          # Credentials come from GitHub Secrets in real projects.
+          # Fallbacks to public SauceDemo defaults are kept here so the workflow runs
+          # out of the box without manual setup, mirroring the pattern from .env.example.
+          SAUCE_STANDARD_USERNAME: ${{ secrets.SAUCE_STANDARD_USERNAME || 'standard_user' }}
+          SAUCE_STANDARD_PASSWORD: ${{ secrets.SAUCE_STANDARD_PASSWORD || 'secret_sauce' }}
+          SAUCE_LOCKED_OUT_USERNAME: ${{ secrets.SAUCE_LOCKED_OUT_USERNAME || 'locked_out_user' }}
+          SAUCE_LOCKED_OUT_PASSWORD: ${{ secrets.SAUCE_LOCKED_OUT_PASSWORD || 'secret_sauce' }}
+        run: npm test
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
