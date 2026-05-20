@@ -103,9 +103,10 @@ git clone <repo-url>
 cd efecagatayercan_GreenBone
 npm install
 npx playwright install
+cp .env.example .env
 ```
 
-The `npx playwright install` step grabs the browser binaries only needed once.
+The `npx playwright install` step grabs the browser binaries — only needed once. The `.env` file holds credentials and is excluded from git; the `.env.example` in the repo serves as a template.
 
 ### Running tests
 
@@ -119,6 +120,14 @@ npm run report         # open the HTML report after a run
 ### Browser
 
 Default is Chromium. Firefox and WebKit are easy to enable in `playwright.config.ts` if needed I left them off for this submission since the focus was on getting the structure right rather than running everything in three browsers.
+
+---
+
+## Credentials & Flakiness Strategy
+
+Credentials are loaded from `.env` locally (excluded from git via `.gitignore`) and would be wired up to GitHub Secrets in CI. A `.env.example` lives in the repo as a template.
+
+On the flakiness side, the philosophy here is root-cause first. Retries are kept minimal (a single retry in CI, none locally) and exist only as a safeguard against true transient issues like brief network blips. If a test is consistently flaky, the fix belongs in the code — not in a higher retry count or in quarantining the test. This is something Playwright's auto-waiting and web-first assertions help a lot with, since most flakiness comes from timing assumptions rather than real bugs.
 
 ---
 
@@ -148,7 +157,6 @@ Things that didn't fit in the scope of this task but would be the natural next s
 - A GitHub Actions workflow that runs the suite on every PR, ideally across browsers in parallel.
 - Visual regression with `toHaveScreenshot()` would catch what `problem_user` exposes nicely.
 - Allure or another reporter for trend analysis over time.
-- Move credentials to `.env` + a secret manager once tests run against a real environment.
 - API-level tests as soon as there's a backend to hit UI shouldn't be the only layer.
 - An accessibility pass with `@axe-core/playwright`.
 
